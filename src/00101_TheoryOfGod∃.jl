@@ -214,10 +214,14 @@ end
 # ϵ₁=x
 # ϵ₁=ϵ
 # ϵ₁=-(g.ône, g.ẑero,ω)
+# Ω.Ο[ϵ₁]
+# Ω.Ο[ϵ̃[1]]
 # ϵ₁=view
 # ϵ̂ = β(ϵ, Ω)
 # ϵ₂=Ω
 # ϵ₂=ω
+# ϵ₂=only(ϵ̃₂)
+# Ω.Ο[ϵ₂]
 # ϵ̃ = filter(ϵ̃ -> ϵ̃ ≠ ϵ₁, ϵ̃)[1]
 # ϵ₁ ⫉ ϵ̃
 # Ω.ϵ̃[ϵ₁]
@@ -231,7 +235,7 @@ function β(ϵ₁::∃, ϵ₂::∀, ω=Ω)
     ϵ̃ = ω.ϵ̃[ϵ₂]
     # ϵ̃₂ = filter(ϵ -> ϵ ≠ ϵ₁ && ⫉(ϵ₁, ϵ, ω), ϵ̃)
     ϵ̃₂ = filter(ϵ -> ⫉(ϵ₁, ϵ, ω), ϵ̃)
-    isempty(ϵ̃₂) && return ω
+    isempty(ϵ̃₂) && return ϵ₂
     β(ϵ₁, only(ϵ̃₂), ω)
 end
 function Base.:∩(zero₁, one₁, ∂₁::Tuple{Bool,Bool}, zero₂, one₂, ∂₂::Tuple{Bool,Bool})
