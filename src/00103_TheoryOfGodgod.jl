@@ -213,13 +213,15 @@ scale(g::god, δ) = begin
     ρ = max.(min.(g.ρ * exp(δ), ○), zero(T))
     god(g.ẑero, g.f̂ocus, g.∂t₀, g.v, ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm)
 end
-move(g::god, ẑeroμ) =
+move(g::god, ẑeroμ) = begin
+    @show "move2", ẑeroμ
     god(
         ∃(g.ẑero.ϵ̂, g.ẑero.d, ẑeroμ, g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ),
         # ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, SA[ẑeroμ[1], g.f̂ocus.μ[2:end]...], g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ),
         g.f̂ocus,
         g.∂t₀, g.v, g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm
     )
+end
 focus(g::god, ôneμ) =
     god(
         # ∃(g.ẑero.ϵ̂, g.ẑero.d, SA[ôneμ[1], g.ẑero.μ[2:end]...], g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ),
@@ -227,10 +229,13 @@ focus(g::god, ôneμ) =
         ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, ôneμ, g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ),
         g.∂t₀, g.v, g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm
     )
-move(g::god, d, δ) = move(g, SVector(ntuple(i -> begin
+move(g::god, d, δ) = begin
+    @show "move1", d, δ
+    move(g, SVector(ntuple(i -> begin
         g.ẑero.d[i] == d && return δ(g.ẑero.μ[i], T(0.01))
         g.ẑero.μ[i]
     end, length(g.ẑero.μ))))
+end
 focus(g::god, d, δ) = focus(g, SVector(ntuple(i -> begin
         g.f̂ocus.d[i] == d && return δ(g.f̂ocus.μ[i], T(0.01))
         g.f̂ocus.μ[i]

@@ -36,7 +36,6 @@ const Ω = 𝕋()
 # const name = Dict{∃, String}()
 include("00103_TheoryOfGodgod.jl")
 include("Octahedron.jl")
-include("00102_TheoryOfGodMiniFB.jl")
 
 const invϕ = one(T) / MathConstants.golden
 ♯space = 10^2
@@ -48,9 +47,11 @@ g = god(
     ♯=(♯space, ♯space))
 g = flatten(g, g.f̂ocus.d[end])
 
+# include("00102_TheoryOfGodMiniFB.jl")
+
 ∃!(g, x -> prod(x), Ω)
 # g, δ = step(g, zero(T))
-# ∃̇(g, Ω)
+∃̇(g, Ω)
 
 ω = Ω
 # const Ω = 𝕋()
@@ -71,16 +72,30 @@ g.f̂ocus.ρ
 # ∃!(g, (x...)->T(0.2))
 # g = move(g, SA[t(Ω.ϵ̃[Ω][1]), T(0.5), T(0.5), T(0.5)])
 
-function start(g::god)
-    t = time()
+function start()
+    # t = time()
     while true
-        # sleep(10)
+        sleep(1)
         yield()
-        t̂ = time()
-        dt = t̂ - t
-        t = t̂
-        g, δ = step(g, dt)
-        δ || continue
+        
+        @show "before pending_actions"
+        while isready(pending_actions)
+            action = take!(pending_actions)
+            global g = action(g)
+        end
+        @show "after pending_actions"
+        
+        # t̂ = time()
+        # dt = t̂ - t
+        # t = t̂
+        # g̃, _ = step(g, dt)
+        # global g = g̃
+        # println("δ=$δ")
+        # δ || continue
+
+        println("start() ẑero.μ=$(g.ẑero.μ)")
+        println("start() f̂ocus.μ=$(g.f̂ocus.μ)")
+
         # p̂ixel = ∃̇(g)
         # @show p̂ixel
         # δ = Δ(pixel, p̂ixel)
@@ -89,10 +104,12 @@ function start(g::god)
         # isempty(δ) && continue
         # todo
         # global buffer = p̂ixel
-        global buffer = floor.(UInt32, reshape(∃̇(g, Ω), prod(g.♯)) .* MAX_RGB)
+        @show "before updatebuffer"
+        global buffer = updatebuffer(g)
+        @show "after updatebuffer"
     end
 end
-# const godTASK = @async start(g)
+# const godTASK = @async start()
 
 # include("00104_TheoryOfGodTypst.jl")
 # Φ_hi = Φ_typst(typst_to_matrix("hi"))
