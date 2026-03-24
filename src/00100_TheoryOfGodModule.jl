@@ -37,22 +37,17 @@ include("00103_TheoryOfGodgod.jl")
 include("Octahedron.jl")
 
 const invϕ = one(T) / MathConstants.golden
-♯space = 10^2
+♯space = 10^1
 const G = Ref(god(
     d=sort(SA[zero(T), invϕ, invϕ^2, one(T)]), # t, x, y, z
-    # ẑeroμ=SA[t(), ○, ○, zero(T)],
-    # f̂ocusμ=SA[t(), T(0.6), T(0.6), zero(T)],
-    # ρ=(T(0.1),T(0.1)),
-    ẑeroμ=SA[t(), zero(T), zero(T), zero(T)],
-    f̂ocusμ=SA[t(), one(T), one(T), one(T)],
-    ρ=(T(0.5),T(0.5),T(0.0)),
+    # ẑeroμ=SA[t(), zero(T), zero(T), zero(T)],
+    # f̂ocusμ=SA[t(), T(1.0), T(1.0), T(1.0)],
+    ẑeroμ=SA[t(), ○, ○, ○],
+    f̂ocusμ=SA[t(), T(0.6), T(0.6), T(0.6)],
+    # ρ=(T(0.5),T(0.5),zero(T)),
+    # ρ=(T(0.1),T(0.1),zero(T)),
+    ρ=(T(0.1),T(0.1),T(0.1)),
     ♯=(♯space, ♯space)))
-# const G = Ref(god(
-#     d=sort(SA[zero(T), one(T)]),
-#     ẑeroμ=SA[zero(T), zero(T)],
-#     f̂ocusμ=SA[one(T), one(T)],
-#     ρ=(T(0.5),T(0.5)),
-#     ♯=(♯space, ♯space)))
 g=G[]
 # G[] = flatten(g, g.f̂ocus.d[end])
 
@@ -60,9 +55,9 @@ g=G[]
 
 ∃!(g, x -> prod(x), Ω)
 # g[], δ = step(g[], zero(T))
+ω = Ω
 ∃̇(g, Ω)
 
-ω = Ω
 # const Ω = 𝕋()
 Ω.Ο[Ω]
 # Ω.Ο[Ω.ϵ̃[Ω][1]]
@@ -75,7 +70,9 @@ g.ẑero.μ
 g.ẑero.ρ
 g.f̂ocus.μ
 g.f̂ocus.ρ
-# g = step(g);
+g.ρ
+G[] = step(G[]);
+g=G[]
 # ∃!(g, (x...)->T(0.1))
 # g = move(g, SA[t(Ω.ϵ̃[Ω][1]), T(0.75), T(0.75), T(0.75)])
 # ∃!(g, (x...)->T(0.2))

@@ -31,61 +31,61 @@ i⚷(i, ⚷, ♯) =
         mod1(i[d] + ♯[d] - î, ♯[d])
     end
 
-# using GLMakie
-# fig = Figure()
-# ax = Axis3(fig[1,1]; perspectiveness=0.5, title="3D Points")
-# for x=0.0:0.1:1.0
-#     for y=0.0:0.1:1.0
-#         scatter!(ax, x*dx[2]+y*dy[2], x*dx[3]+y*dy[3], x*dx[4]+y*dy[4];markersize=6, color=:black)
+function dxdy(g::god)
+    N = length(g.ẑero.μ)
+    d = g.f̂ocus.μ .- g.ẑero.μ
+    D = g.norm(d)^2
+    ey = SA[zeros(T, N - 2)..., one(T), zero(T)]
+    dy = ey .- d[end-1] / D * d
+    dy /= g.norm(dy)
+    ex = SA[zeros(T, N - 3)..., one(T), zeros(T, 2)...]
+    dx = ex .- d[end-2] / D * d
+    dx = dx .- dot(dx, dy) * dy
+    dx /= g.norm(dx)
+    dx *= 2 * g.ρ[1]
+    dy *= 2 * g.ρ[2]
+    μ = (g.f̂ocus.μ .+ g.ẑero.μ) * ○
+    ρ = (abs.(dx) + abs.(dy) + abs.(d)) * ○
+    dx, dy, d, μ, ρ, N
+end
+using GLMakie
+fig = Figure()
+ax = Axis3(fig[1, 1])
+xout=Array(xout)
+for i = 1:size(xout, 1)
+    for j = 1:size(xout, 2)
+        for k = 1:size(xout, 3)
+            scatter!(ax, xout[i,j,k,2], xout[i,j,k,3], xout[i,j,k,4])
+        end
+    end
+end
+# dx, dy, d, μ, ρ, N=dxdy(g)
+# # for z=0.0:0.1:1.0
+#     for x=0.0:0.1:1.0
+#         for y=0.0:0.1:1.0
+#             scatter!(ax, μ[2]+x*dx[2]/2+y*dy[2]/2, μ[3]+x*dx[3]/2+y*dy[3]/2, μ[4]+x*dx[4]/2+y*dy[4]/2;markersize=6, color=:black)
+#             # scatter!(ax, z*d[2]+x*dx[2]/2+y*dy[2]/2, z*d[3]+x*dx[3]/2+y*dy[3]/2, z*d[4]+x*dx[4]/2+y*dy[4]/2;markersize=6, color=:black)
+#         end
+#         scatter!(ax, x*d[2], x*d[3], x*d[4]; markersize=6, color=:red)
+#         # scatter!(ax, μ[2], μ[3], μ[4]; markersize=6, color=:red)
+#         scatter!(ax, μ[2]+x*dx[2]/2, μ[3]+x*dx[3]/2, μ[4]+x*dx[4]/2; markersize=6, color=:blue)
+#         scatter!(ax, μ[2]+x*dy[2]/2, μ[3]+x*dy[3]/2, μ[4]+x*dy[4]/2; markersize=6, color=:yellow)
 #     end
-#     scatter!(ax, x*d[2], x*d[3], x*d[4]; markersize=6, color=:red)
-#     scatter!(ax, x*dx[2], x*dx[3], x*dx[4]; markersize=6, color=:blue)
-#     scatter!(ax, x*dy[2], x*dy[3], x*dy[4]; markersize=6, color=:yellow)
-# end
-# fig
+#     # scatter!(ax, z*d[2], z*d[3], z*d[4]; markersize=6, color=:red)
+# # end
+# # scatter!(ax, (μ .- ρ)[2], (μ .- ρ)[3], (μ .- ρ)[4]; markersize=6, color=:green)
+# # scatter!(ax, (μ .+ ρ)[2], (μ .+ ρ)[3], (μ .+ ρ)[4]; markersize=6, color=:green)
+# # fig
 # dot(dx, dy)
 # dot(dx, d)
 # dot(dy, d)
 # g.norm(dx)
 # g.norm(dy)
-function dxdy(g::god)
-    N = length(g.ẑero.μ)
-    
-    d = g.f̂ocus.μ .- g.ẑero.μ
-    D = g.norm(d)^2
+# μ .- ρ
+# μ .- dx/2 .- dy/2
 
-    ez = SA[zeros(T, N - 1)..., one(T)]
-    dy = ez .- d[end] / D * d
-    dy /= g.norm(dy)
-
-    ey = SA[zeros(T, N - 2)..., one(T), zero(T)]
-    dx = ey .- d[end-1] / D * d
-    dx = dx .- dot(dx, dy) * dy
-    dx /= g.norm(dx)
-
-    dx = SA[zeros(T, N - 3)..., one(T), zeros(T, 2)...]
-    dxort = dx .- d[end-2] / D * d
-    dxnorm = g.norm(dxort)
-    dy = SA[zeros(T, N - 2)..., one(T), zero(T)]
-    dyort = dy .- d[end-1] / D * d
-    dynorm = g.norm(dyort)
-    dx = dxort
-    dy = dyort
-    if dxnorm ≤ dynorm && dxnorm ≤ dznorm
-        dx = dzort
-    elseif dynorm ≤ dxnorm && dynorm ≤ dznorm
-        dy = dzort
-    end
-    dx = dx / g.norm(dx)
-    dy = dy .- dot(dy, dx)*dx
-    dy = dy * 2 * g.ρ[2] / g.norm(dy)
-    dx *= 2 * g.ρ[1]
-    μ = (g.f̂ocus.μ .+ g.ẑero.μ) * ○
-    ρ = (abs.(dx) + abs.(dy) + abs.(d)) * ○
-    dx, dy, μ, d, ρ, N
-end
 function ∃!(g::god, Φ, ω=g.Ω)
-    _, _, μ̇, _, ρ̇, _ = dxdy(g)
+    _, _, _, μ̇, ρ̇, _ = dxdy(g)
     ṫ = t(ω.Ο[ω] + 1)
     ρt = (one(T) - ṫ) * ○ # todo create non-eternally
     μt = ṫ + ρt
@@ -97,42 +97,45 @@ end
 
 trivial(ϵ) = ϵ isa 𝕋 || ϵ.Φ === ○̂
 function ∃̇(g::god, ω=g.Ω)
-    dx, dy, μ, d, ρ, _ = dxdy(g)
+    dx, dy, _, μ, ρ, N = dxdy(g)
     ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
     ϵ = β(ϵ, ω, ω)
     istrivial = trivial(ϵ)
     i = fill(istrivial ? 0 : 1, g.♯..., GL_N - 1)
     Φ̃Φ̃ = []
     !istrivial && push!(Φ̃Φ̃, ϵ.Φ)
-    owners!(g, ϵ, i, Φ̃Φ̃, 0, dx, dy, ω, istrivial)
+    f̂ocus = g.ẑero.μ .+ (g.f̂ocus.μ .- g.ẑero.μ) / 2 .+ SA[zero(T), fill(g.ρ[end], N - 1)...]
+    hasdepth = !iszero(g.ρ[end])
+    nz = hasdepth ? GL_N - 1 : 1
+    owners!(g, f̂ocus, ϵ, i, Φ̃Φ̃, 0, dx, dy, nz, ω, istrivial)
     ΦΦ = ΦTuple(ntuple(i -> Φ̃Φ̃[i], length(Φ̃Φ̃)))
-    hasdepth = !iszero(d[end])
-    Π = hasdepth ? project3d! : project2d!
-    out = project(g, ΦΦ, Π, i, dx, dy)
-    if hasdepth
-        ϕ = ○
-        if !trivial(g.f̂ocus)
-            ϵ = X(g.f̂ocus, g.∇̄, ω)
-            ϕ = ϵ.Φ(g.f̂ocus.μ)
-        end
-        out .= out .+ ϕ
+    Π, f̂ocusϕ = if hasdepth
+        z = @SVector zeros(T, N)
+        ϵ = ∃(ω, g.ẑero.d, f̂ocus, z, g.ẑero.∂, ○̂)
+        ϵ, found = X(ϵ, g.∇̄, ω)
+        ϕ = !found || trivial(ϵ) ? ○ : ϵ.Φ(f̂ocus)
+        project3d!, ϕ
+    else
+        project2d!, zero(T)
     end
-    out
+    ẑero = μ .+ (dx .+ dy) * ○
+    d = f̂ocus .- ẑero
+    project(ΦΦ, Π, i, ẑero, d, dx, dy, g.♯..., f̂ocusϕ)
 end
-function owners!(g, ϵ, i, ΦΦ, ∇, dx, dy, ω, istrivial)
+function owners!(g, f̂ocus, ϵ, i, ΦΦ, ∇, dx, dy, nz, ω, istrivial)
     if 0 < ∇ && ϵ isa ∃ && !istrivial
         intersects = pyramid_box_intersection!(
             i, length(ΦΦ) + 1,
-            g.ẑero.μ, g.f̂ocus.μ,
+            g.ẑero.μ, f̂ocus,
             dx, dy,
             ϵ.μ .- ϵ.ρ, ϵ.μ .+ ϵ.ρ,
-            g.♯..., GL_N - 1)
+            g.♯..., nz)
         intersects || return
         push!(ΦΦ, ϵ.Φ)
     end
     ∇ == g.∇̄ && return
     for ϵ̃ = ω.ϵ̃[ϵ]
-        owners!(g, ϵ̃, i, ΦΦ, ∇ + 1, dx, dy, ω, trivial(ϵ̃))
+        owners!(g, f̂ocus, ϵ̃, i, ΦΦ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
     end
 end
 
@@ -154,26 +157,31 @@ end
         return zero(T)
     end
 end
-function project(g, ΦΦ, Π, i, dx, dy)
-    out = KernelAbstractions.zeros(GPU_BACKEND, T, g.♯...)
+function project(ΦΦ, Π, i, ẑero, d, dx, dy, nx, ny, f̂ocusϕ)
+    out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
+    xout = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny, GL_N - 1, 4)
+    zout = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny, GL_N - 1, 4)
+    tout = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny, GL_N - 1)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
     Base.invokelatest() do
         Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
-            out,
-            ΦΦ, i̇, g.ẑero.μ, g.f̂ocus.μ, dx, dy, g.♯...,
-            ndrange=g.♯
+            out, xout,zout,tout,
+            ΦΦ, i̇, ẑero, d, dx, dy, f̂ocusϕ,
+            nx, ny, GL_N-1,
+            GL_WEIGHTS,GL_NODES,
+            ndrange=(nx, ny)
         )
     end
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
 # todo does x actually belong to ϵ
-@kernel function project2d!(out, ΦΦ, i, ẑero, f̂ocus, dx, dy, nx, ny)
+@kernel function project2d!(out, ΦΦ, i, ẑero, d, dx, dy, f̂ocusϕ, nx, ny)
     (ix, iy) = @index(Global, NTuple)
     iϕ = i[ix, iy]
     if iszero(iϕ)
-        out[ix, iy] = zero(T)
+        out[ix, iy] = ○
     else
         ĩx = T(ix - 1) / T(nx - 1)
         ĩy = T(iy - 1) / T(ny - 1)
@@ -182,27 +190,52 @@ end
     end
 end
 # todo does x actually belong to ϵ
-@kernel function project3d!(out, ΦΦ, i, ẑero, f̂ocus, dx, dy, nx, ny)
-    ϕ = zero(T)
+@kernel function project3d!(out, xout, zout,tout,ΦΦ, i, ẑero, d, dx, dy, f̂ocusϕ, nx, ny, nz, gl_weights, gl_nodes)
+    ϕ = f̂ocusϕ
     (ix, iy) = @index(Global, NTuple)
-    d = f̂ocus .- ẑero
-    for iz = 1:GL_N-1
+    for iz = 1:nz
         iϕ = i[ix, iy, iz]
         if iszero(iϕ)
-            ϕ += ○ * GL_WEIGHTS[iz]
+            ϕ += ○ * gl_weights[iz]
             continue
         end
-        t = GL_NODES[iz]
+        t = gl_nodes[iz]
+        tout[ix, iy, iz] = t
         ĩx = T(ix - 1) / T(nx - 1)
         ĩy = T(iy - 1) / T(ny - 1)
-        zt = ẑero .+ t * d
-        x = zt .+ ĩx * dx .+ ĩy * dy
-        ϕ += Φ̇(ΦΦ, iϕ, x) * GL_WEIGHTS[iz] # todo clamp to [0,1]
+        z = ẑero .+ t * d
+        zout[ix, iy, iz, :] .= z
+        d̃x = dx * (1 - t)
+        d̃y = dy * (1 - t)
+        x = z .+ ĩx * d̃x .+ ĩy * d̃y
+        xout[ix, iy, iz, :] .= x
+        ϕ += Φ̇(ΦΦ, iϕ, x) * gl_weights[iz] # todo clamp to [0,1]
     end
     out[ix, iy] = one(T) - exp(-ϕ)
 end
 
-
+# nx,ny=g.♯[1],g.♯[2]
+# ϕ = f̂ocusϕ
+# (ix, iy) = (1,1)
+# (ix, iy) = (2,2)
+# iz = collect(1:GL_N-1)[1]
+# for iz = 1:GL_N-1
+# iϕ = i[ix, iy, iz]
+# if iszero(iϕ)
+#     ϕ += ○ * GL_WEIGHTS[iz]
+#     continue
+# end
+# tt = GL_NODES[iz]
+# ĩx = T(ix - 1) / T(nx - 1)
+# ĩy = T(iy - 1) / T(ny - 1)
+# z = ẑero .+ tt * d
+# d̃x = dx * (1 - tt)
+# d̃y = dy * (1 - tt)
+# x = z .+ ĩx * d̃x .+ ĩy * d̃y
+# ϕ += Φ̇(ΦΦ, iϕ, x) * GL_WEIGHTS[iz] # todo clamp to [0,1]
+# @show x, ϕ
+# end
+# one(T) - exp(-ϕ)
 
 
 function step(g::god, dt̂=one(T))
@@ -255,9 +288,9 @@ focus(g::god, ôneμ) =
 move(g::god, d, δ) = begin
     @show "move1", d, δ
     move(g, SVector(ntuple(i -> begin
-        g.ẑero.d[i] == d && return δ(g.ẑero.μ[i], T(0.01))
-        g.ẑero.μ[i]
-    end, length(g.ẑero.μ))))
+            g.ẑero.d[i] == d && return δ(g.ẑero.μ[i], T(0.01))
+            g.ẑero.μ[i]
+        end, length(g.ẑero.μ))))
 end
 focus(g::god, d, δ) = focus(g, SVector(ntuple(i -> begin
         g.f̂ocus.d[i] == d && return δ(g.f̂ocus.μ[i], T(0.01))

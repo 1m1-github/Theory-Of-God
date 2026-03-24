@@ -48,35 +48,36 @@ points inside axis-aligned box [a,b]. Empty slices → (0,0,0,0). Cost: O(nz·n)
 # nx=g.♯[1]
 # ny=g.♯[2]
 # nz=GL_N
-function pyramid_box_intersection!(
-    i, ĩ, z, o, dx, dy, a, b, nx, ny, nz
-)
+function pyramid_box_intersection_slice!(i, i̇, dx, dy, a, b, c, d, nx, ny, N, k)
+    t = GL_NODES[k]
+    si_lo, si_hi = -one(T), one(T)
+    sj_lo, sj_hi = -one(T), one(T)
+    empty = false
+    for m = 1:N
+        ck = c[m] + t * d[m]
+        α = dx[m] * ○
+        β = dy[m] * ○
+        L = a[m] - ck
+        U = b[m] - ck
+        si_lo, si_hi, empty = tighten(si_lo, si_hi, α, abs(β), L, U)
+        empty && break
+        sj_lo, sj_hi, empty = tighten(sj_lo, sj_hi, β, abs(α), L, U)
+        empty && break
+    end
+    empty && return false
+    ilo, ihi = s_to_indices(si_lo, si_hi, nx)
+    jlo, jhi = s_to_indices(sj_lo, sj_hi, ny)
+    (iszero(ilo) || iszero(jlo)) && return false
+    i[ilo:ihi, jlo:jhi, k] .= i̇
+    true
+end
+function pyramid_box_intersection!(i, i̇, z, o, dx, dy, a, b, nx, ny, nz)
     N = length(z)
     c = (z + o) * ○
     d = o - c
     intersects = false
     @inbounds for k = 1:nz
-        t = GL_NODES[k]
-        si_lo, si_hi = -one(T), one(T)
-        sj_lo, sj_hi = -one(T), one(T)
-        empty = false
-        for m = 1:N
-            ck = c[m] + t * d[m]
-            α = dx[m] * ○
-            β = dy[m] * ○
-            L = a[m] - ck
-            U = b[m] - ck
-            si_lo, si_hi, empty = tighten(si_lo, si_hi, α, abs(β), L, U)
-            empty && break
-            sj_lo, sj_hi, empty = tighten(sj_lo, sj_hi, β, abs(α), L, U)
-            empty && break
-        end
-        empty && continue
-        ilo, ihi = s_to_indices(si_lo, si_hi, nx)
-        jlo, jhi = s_to_indices(sj_lo, sj_hi, ny)
-        (iszero(ilo) || iszero(jlo)) && continue
-        i[ilo:ihi, jlo:jhi, k] .= ĩ
-        intersects = true
+        intersects |= pyramid_box_intersection_slice!(i, i̇, dx, dy, a, b, c, d, nx, ny, N, k)
     end
     intersects
 end
