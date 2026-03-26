@@ -51,14 +51,16 @@ function dxdy(g::god)
 end
 
 function ∃!(g::god, Φ, ω=g.Ω)
-    _, _, _, μ̇, ρ̇, _ = dxdy(g)
-    ṫ = t(ω.Ο[ω] + 1)
-    ρt = (one(T) - ṫ) * ○ # todo create non-eternally
-    μt = ṫ + ρt
-    μ = SA[μt, μ̇[2:end]...]
-    ρ = SA[ρt, ρ̇[2:end]...]
+    _, _, _, μ, ρ, _ = dxdy(g)
+    # ṫ = t(ω.Ο[ω] + 1)
+    # t(ω)
+    # ρt = (one(T) - ṫ) * ○ # todo create non-eternally
+    # μt = ṫ + ρt
+    # μ = SA[μt, μ̇[2:end]...]
+    # ρ = SA[ρt, ρ̇[2:end]...]
     try
-        ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, Φ)
+        ∂ = SA[(false, true), g.ẑero.∂[2:end]...]
+        ϵ = ∃(ω, g.ẑero.d, μ, ρ, ∂, Φ)
         ∃!(ϵ, ω)
     catch e
         bt = catch_backtrace()
@@ -74,15 +76,20 @@ function ∃̇(g::god, ω=g.Ω)
         ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
         ϵ = β(ϵ, ω, ω)
         istrivial = trivial(ϵ)
-        i = fill(istrivial ? 0 : 1, g.♯..., GL_N - 1)
-        Φ̃Φ̃ = []
-        !istrivial && push!(Φ̃Φ̃, ϵ.Φ)
+        ϵϵ = []
+        !istrivial && push!(ϵϵ, ϵ)
         f̂ocusρ = SA[zero(T), fill(g.ρ[end], N - 1)...]
         f̂ocus = g.ẑero.μ .+ d * ○ .* (one(T) .+ f̂ocusρ)
         hasdepth = !iszero(g.ρ[end])
         nz = hasdepth ? GL_N - 1 : 1
-        owners!(g, f̂ocus, ϵ, i, Φ̃Φ̃, 0, dx, dy, nz, ω, istrivial)
-        ΦΦ = ΦTuple(ntuple(i -> Φ̃Φ̃[i], length(Φ̃Φ̃)))
+        i = fill(istrivial ? 0 : 1, g.♯..., nz)
+        owners!(g, f̂ocus, ϵ, i, ϵϵ, 0, dx, dy, nz, ω, istrivial)
+        ΦΦ = ΦTuple(ntuple(i -> ϵϵ[i].Φ, length(ϵϵ)))
+        μρϵϵ = map(ϵ -> μρΩ(ϵ), ϵϵ)
+        ẑeros = ntuple(i ->  μρϵϵ[i][1] .- μρϵϵ[i][2], length(μρϵϵ))
+        ônes = ntuple(i -> μρϵϵ[i][1] .+ μρϵϵ[i][2], length(μρϵϵ))
+        ∂z = ntuple(i -> ntuple(j -> ϵϵ[i].∂[j][1], N), length(ϵϵ))
+        ∂o = ntuple(i -> ntuple(j -> ϵϵ[i].∂[j][2], N), length(ϵϵ))
         Π̂, Π, f̂ocusϕ = if hasdepth
             z = @SVector zeros(T, N)
             ϵ = ∃(ω, g.ẑero.d, f̂ocus, z, g.ẑero.∂, ○̂)
@@ -92,29 +99,29 @@ function ∃̇(g::god, ω=g.Ω)
         else
             project2d, project2d!, zero(T)
         end
-        ẑero = μ .- (dx .+ dy) * ○
-        dẑero = f̂ocus .- ẑero
-        Π̂(ΦΦ, Π, i, ẑero, dẑero, dx, dy, g.♯..., f̂ocusϕ)
+        godẑero = μ .- (dx .+ dy) * ○
+        godẑerof̂ocus = f̂ocus .- godẑero
+        Π̂(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑerof̂ocus, dx, dy, g.♯..., f̂ocusϕ)
     catch e
         bt = catch_backtrace()
         showerror(stderr, e, bt)
         fill(○, g.♯...)
     end
 end
-function owners!(g, f̂ocus, ϵ, i, ΦΦ, ∇, dx, dy, nz, ω, istrivial)
+function owners!(g, f̂ocus, ϵ, i, ϵϵ, ∇, dx, dy, nz, ω, istrivial)
     if 0 < ∇ && ϵ isa ∃ && !istrivial
         intersects = pyramid_box_intersection!(
-            i, length(ΦΦ) + 1,
+            i, length(ϵϵ) + 1,
             g.ẑero.μ, f̂ocus,
             dx, dy,
             ϵ.μ .- ϵ.ρ, ϵ.μ .+ ϵ.ρ,
             g.♯..., nz)
         intersects || return
-        push!(ΦΦ, ϵ.Φ)
+        push!(ϵϵ, ϵ)
     end
     ∇ == g.∇̄ && return
     for ϵ̃ = ω.ϵ̃[ϵ]
-        owners!(g, f̂ocus, ϵ̃, i, ΦΦ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
+        owners!(g, f̂ocus, ϵ̃, i, ϵϵ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
     end
 end
 
@@ -136,47 +143,60 @@ end
         return zero(T)
     end
 end
-function project2d(ΦΦ, Π, i, ẑero, d, dx, dy, nx, ny, f̂ocusϕ)
+# Π̂(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑerof̂ocus, dx, dy, g.♯..., f̂ocusϕ)
+# nx, ny = g.♯[1], g.♯[2]
+function project2d(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑerof̂ocus, dx, dy, nx, ny, f̂ocusϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
     Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
         out,
-        ΦΦ, i̇, ẑero, dx, dy,
+        ΦΦ, i̇, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy,
         nx, ny,
         ndrange=(nx, ny)
     )
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
-function project3d(ΦΦ, Π, i, ẑero, d, dx, dy, nx, ny, f̂ocusϕ)
+function project3d(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑerof̂ocus, dx, dy, nx, ny, f̂ocusϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
     Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
         out,
-        ΦΦ, i̇, ẑero, d, dx, dy, f̂ocusϕ,
+        ΦΦ, i̇, godẑero, godẑerof̂ocus, dx, dy, f̂ocusϕ,
         nx, ny, GL_N - 1, GL_NODES, GL_WEIGHTS,
         ndrange=(nx, ny)
     )
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
-# todo does x actually belong to ϵ
-@kernel function project2d!(out, ΦΦ, i, ẑero, dx, dy, nx, ny)
+@kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
     (ix, iy) = @index(Global, NTuple)
+    # ix, iy = 2,2
     iϕ = i[ix, iy]
     if iszero(iϕ)
         out[ix, iy] = ○
     else
         ĩx = T(ix - 1) / T(nx - 1)
         ĩy = T(iy - 1) / T(ny - 1)
-        x = ẑero .+ ĩx * dx .+ ĩy * dy
-        out[ix, iy] = Φ̇(ΦΦ, iϕ, x) # todo clamp to [0,1]
+        x = godẑero .+ ĩx * dx .+ ĩy * dy
+        zlocal = ẑeros[iϕ]
+        olocal = ônes[iϕ]
+        ∂zϵ = ∂z[iϕ]
+        ∂oϵ = ∂o[iϕ]
+        if any(x .< zlocal .|| (x .== zlocal .&& ∂zϵ) .|| 
+            olocal .< x .|| (x .== olocal .&& ∂oϵ) .|| 
+            olocal .== zlocal)
+            out[ix, iy] = ○
+        else
+            xlocal = (x .- zlocal) ./ (olocal .- zlocal) # todo case olocal < zlocal
+            out[ix, iy] = Φ̇(ΦΦ, iϕ, xlocal) # todo clamp to [0,1]
+        end
     end
 end
 # todo does x actually belong to ϵ
-@kernel function project3d!(out, ΦΦ, i, ẑero, d, dx, dy, f̂ocusϕ, nx, ny, nz, gl_nodes, gl_weights)
+@kernel function project3d!(out, ΦΦ, i, godẑero, godẑerof̂ocus, dx, dy, f̂ocusϕ, nx, ny, nz, gl_nodes, gl_weights)
     (ix, iy) = @index(Global, NTuple)
     ĩx = T(ix - 1) / T(nx - 1)
     ĩy = T(iy - 1) / T(ny - 1)
@@ -189,7 +209,7 @@ end
         end
         t = gl_nodes[iz]
         t̃ = one(T) - t
-        z = ẑero .+ t * d
+        z = godẑero .+ t * godẑerof̂ocus
         d̃x = t̃ * dx
         d̃y = t̃ * dy
         x = z .+ ĩx * d̃x .+ ĩy * d̃y

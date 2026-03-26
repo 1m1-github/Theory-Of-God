@@ -47,7 +47,9 @@ const BROWSER_TASK = Threads.@spawn start(godbrowserstart, godbrowserkeypress)
 g = godBROWSER[].g
 
 # dx, dy, d, μ, ρ, N=dxdy(g)
-# ∃!(g, x -> T(0.1), Ω[])
+∃!(g, x -> T(0.1), Ω[])
+∃!(g, x -> T(0.2), Ω[])
+∃!(g, x -> T(0.3), Ω[])
 # ∃!(g, x -> begin
 #         abs(x[2] - x[3]) < T(0.01) && return one(T)
 #         # abs([2] - x[3]) < min(g.ρ[1],g.ρ[2])*T(0.01) && return one(T)
@@ -58,9 +60,17 @@ g = godBROWSER[].g
 #                         ∃̇(g, Ω[]);
 #                     end;
 
+Ω[] === ω
+ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
+ϵ = β(ϵ, ω, ω)
+Ω[].ϵ̃[Ω[]]
+Ω[].ϵ̃[Ω[]][1]
+Ω[].ϵ̃[Ω[].ϵ̃[Ω[]][1]][1]
+
 # # ∃!(g, (x...) -> prod(x), Ω[])
 # ∃!(g, x -> prod(x), Ω[])
-# step!(g)
+step!(g)
+unique(ϕ̇)
 # g.∂t₀=false
 # focusup!(g, 2)
 # focus!(g, SA[g.f̂ocus.μ[1],T(0.3),T(0.3),g.f̂ocus.μ[3]])
@@ -77,11 +87,11 @@ g = godBROWSER[].g
 # scaleup!(g, 3)
 # g.ρ=(g.ρ[1],g.ρ[2],zero(T))
 # scaledown!(g, 2)
-# g.ẑero.μ
-# g.ẑero.ρ
-# g.f̂ocus.μ
-# g.f̂ocus.ρ
-# g.ρ
+g.ẑero.μ
+g.ẑero.ρ
+g.f̂ocus.μ
+g.f̂ocus.ρ
+g.ρ
 # norm(g.f̂ocus.μ .- g.ẑero.μ)
 # move!(g, SA[t(), ○, ○, ○])
 # focus!(g, SA[t(), ○*exp(T(0.1)), ○*exp(T(0.1)), ○*exp(T(0.1))])
@@ -89,8 +99,8 @@ g = godBROWSER[].g
 # jerkup!(g)
 # speed!(g, T(0.001))
 # Ω[].ϵ̃[Ω[]][1].Φ(SA[0.0,0.0,0.0,0.0])
-# Ω[].Ο[Ω[]]
-# t()
+Ω[].Ο[Ω[]]
+t()
 
 include("Typst.jl")
 # ∃!(g, typst("o"), Ω[])
@@ -99,7 +109,7 @@ include("Typst.jl")
 # ∃!(g, typst("ii"), Ω[])
 
 # g[], δ = step(g[], zero(T))
-# ω = Ω[]
+ω = Ω[]
 # g=G[]
 # ∃̇(G[], Ω[])
 

@@ -17,9 +17,13 @@ struct ∃{N,F,P<:∀} <: ∀
         d, μ, ρ = map(x -> x[p], (d, μ, ρ))
         ∂ = SVector(ntuple(i -> ∂[p[i]], N))
         h = hash(d, hash(μ, hash(ρ, hash(∂, hash(ϵ̂)))))
-        new{N,F,typeof(ϵ̂)}(ϵ̂, d, μ, ρ, ∂, Φ, h)
+        new{N,F,typeof(ϵ̂)}(ϵ̂, d, μ, ρ, ∂, Φ, h) # todo wrap Φ in Φ̂ for global to local map and boundary check
     end
 end
+# function Φ̂(Φ)
+#     xΩ -> begin
+#     end
+# end
 Base.hash(ϵ::∃, h::UInt) = hash(ϵ.h, h)
 struct 𝕋 <: ∀
     ϵ̃::Dict{∀,Vector{∃}}

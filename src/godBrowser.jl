@@ -9,7 +9,7 @@ godbrowser(g, browser) =
             t = time()
             put!(browser.processor, JS(g.♯[1], g.♯[2]))
             ϕ = zeros(T, g.♯[1], g.♯[2])
-            while true
+            while false # DEBUG
                 try
                     yield()
                     t̃ = time()
@@ -39,8 +39,8 @@ function godbrowserstart(browser)
         ẑeroμ=SA[t(), ○, ○, ○],
         f̂ocusμ=SA[t(), ○, ○, ○+T(0.1)],
         ρ=(T(0.1), T(0.1), zero(T)),
-        # ♯=(10, 10))
-        ♯=(Int(browser.width), Int(browser.height)))
+        ♯=(10, 10))
+        # ♯=(Int(browser.width), Int(browser.height)))
     global godBROWSER = Ref(godbrowser(g, browser))
 end
 const CHANGE_MODE = Ref(0) # 0=zero, 1=focus, 2=ρ
