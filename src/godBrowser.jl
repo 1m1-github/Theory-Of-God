@@ -41,19 +41,53 @@ function godbrowserstart(browser)
         ρ=(T(0.1), T(0.1), zero(T)),
         # ♯=(10, 10))
         ♯=(Int(browser.width), Int(browser.height)))
-    gb = godbrowser(g, browser)
-    push!(godBROWSER[], gb)
-    gb
+    global godBROWSER = Ref(godbrowser(g, browser))
 end
+const CHANGE_MODE = Ref(0) # 0=zero, 1=focus, 2=ρ
+const CHANGE_DIM_INDEX = Ref(2)
 function godbrowserkeypress(key)
+    # println("Key pressed: $key")
+    # println("CHANGE_MODE=$CHANGE_MODE[]")
+    # println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
+    # println("ẑero.μ=$(godBROWSER[].g.ẑero.μ)")
+    # println("f̂ocus.μ=$(godBROWSER[].g.f̂ocus.μ)")
+    # println("f̂ocus.μ=$(godBROWSER[].g.ρ)")
     if key == "ArrowUp"
-    elseif key == "ArrowUp"
-    elseif key == "ArrowUp"
-    elseif key == "ArrowUp"
+        if CHANGE_MODE[] == 0
+            moveup!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        elseif CHANGE_MODE[] == 1
+            focusup!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        else
+            scaleup!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        end
+    elseif key == "ArrowDown"
+        if CHANGE_MODE[] == 0
+            movedown!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        elseif CHANGE_MODE[] == 1
+            focusdown!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        else
+            scaledown!(godBROWSER[].g, CHANGE_DIM_INDEX[])
+        end
+    elseif key == "0"
+        global CHANGE_MODE[] = (CHANGE_MODE[] + 1) % 3
+    elseif key == "q"
+        jerkup!(godBROWSER[].g)
+    elseif key == "w"
+        jerkdown!(godBROWSER[].g)
+    else
+        try
+            global CHANGE_DIM_INDEX[] = parse(UInt, key)
+        catch end
     end
+    # println("After key pressed: $key")
+    println("CHANGE_MODE=$CHANGE_MODE[]")
+    println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
+    println("ẑero.μ=$(godBROWSER[].g.ẑero.μ)")
+    println("f̂ocus.μ=$(godBROWSER[].g.f̂ocus.μ)")
+    println("f̂ocus.μ=$(godBROWSER[].g.ρ)")
 end
 # put!(::godBrowser) = nothing # todo ?
-const godBROWSER = Ref(Set{godBrowser}())
+godBROWSER = nothing
 
 # all(==(ntuple(_->one(T),4)),p̂ixel)
 # g=gb.g

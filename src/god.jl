@@ -57,37 +57,49 @@ function ∃!(g::god, Φ, ω=g.Ω)
     μt = ṫ + ρt
     μ = SA[μt, μ̇[2:end]...]
     ρ = SA[ρt, ρ̇[2:end]...]
-    ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, Φ)
-    ∃!(ϵ, ω)
+    try
+        ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, Φ)
+        ∃!(ϵ, ω)
+    catch e
+        bt = catch_backtrace()
+        showerror(stderr, e, bt)
+        nothing
+    end
 end
 
 trivial(ϵ) = ϵ isa 𝕋 || ϵ.Φ === ○̂
 function ∃̇(g::god, ω=g.Ω)
-    dx, dy, d, μ, ρ, N = dxdy(g)
-    ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
-    ϵ = β(ϵ, ω, ω)
-    istrivial = trivial(ϵ)
-    i = fill(istrivial ? 0 : 1, g.♯..., GL_N - 1)
-    Φ̃Φ̃ = []
-    !istrivial && push!(Φ̃Φ̃, ϵ.Φ)
-    f̂ocusρ = SA[zero(T), fill(g.ρ[end], N - 1)...]
-    f̂ocus = g.ẑero.μ .+ d * ○ .* (one(T) .+ f̂ocusρ)
-    hasdepth = !iszero(g.ρ[end])
-    nz = hasdepth ? GL_N - 1 : 1
-    owners!(g, f̂ocus, ϵ, i, Φ̃Φ̃, 0, dx, dy, nz, ω, istrivial)
-    ΦΦ = ΦTuple(ntuple(i -> Φ̃Φ̃[i], length(Φ̃Φ̃)))
-    Π̂, Π, f̂ocusϕ = if hasdepth
-        z = @SVector zeros(T, N)
-        ϵ = ∃(ω, g.ẑero.d, f̂ocus, z, g.ẑero.∂, ○̂)
-        ϵ, found = X(ϵ, g.∇̄, ω)
-        ϕ = !found || trivial(ϵ) ? ○ : ϵ.Φ(f̂ocus)
-        project3d, project3d!, ϕ
-    else
-        project2d, project2d!, zero(T)
+    try
+        dx, dy, d, μ, ρ, N = dxdy(g)
+        ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
+        ϵ = β(ϵ, ω, ω)
+        istrivial = trivial(ϵ)
+        i = fill(istrivial ? 0 : 1, g.♯..., GL_N - 1)
+        Φ̃Φ̃ = []
+        !istrivial && push!(Φ̃Φ̃, ϵ.Φ)
+        f̂ocusρ = SA[zero(T), fill(g.ρ[end], N - 1)...]
+        f̂ocus = g.ẑero.μ .+ d * ○ .* (one(T) .+ f̂ocusρ)
+        hasdepth = !iszero(g.ρ[end])
+        nz = hasdepth ? GL_N - 1 : 1
+        owners!(g, f̂ocus, ϵ, i, Φ̃Φ̃, 0, dx, dy, nz, ω, istrivial)
+        ΦΦ = ΦTuple(ntuple(i -> Φ̃Φ̃[i], length(Φ̃Φ̃)))
+        Π̂, Π, f̂ocusϕ = if hasdepth
+            z = @SVector zeros(T, N)
+            ϵ = ∃(ω, g.ẑero.d, f̂ocus, z, g.ẑero.∂, ○̂)
+            ϵ, found = X(ϵ, g.∇̄, ω)
+            ϕ = !found || trivial(ϵ) ? ○ : ϵ.Φ(f̂ocus)
+            project3d, project3d!, ϕ
+        else
+            project2d, project2d!, zero(T)
+        end
+        ẑero = μ .- (dx .+ dy) * ○
+        dẑero = f̂ocus .- ẑero
+        Π̂(ΦΦ, Π, i, ẑero, dẑero, dx, dy, g.♯..., f̂ocusϕ)
+    catch e
+        bt = catch_backtrace()
+        showerror(stderr, e, bt)
+        fill(○, g.♯...)
     end
-    ẑero = μ .- (dx .+ dy) * ○
-    dẑero = f̂ocus .- ẑero
-    Π̂(ΦΦ, Π, i, ẑero, dẑero, dx, dy, g.♯..., f̂ocusϕ)
 end
 function owners!(g, f̂ocus, ϵ, i, ΦΦ, ∇, dx, dy, nz, ω, istrivial)
     if 0 < ∇ && ϵ isa ∃ && !istrivial
@@ -128,14 +140,12 @@ function project2d(ΦΦ, Π, i, ẑero, d, dx, dy, nx, ny, f̂ocusϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
-    # Base.invokelatest() do
-        Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
-            out,
-            ΦΦ, i̇, ẑero, dx, dy,
-            nx, ny,
-            ndrange=(nx, ny)
-        )
-    # end
+    Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
+        out,
+        ΦΦ, i̇, ẑero, dx, dy,
+        nx, ny,
+        ndrange=(nx, ny)
+    )
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
@@ -143,14 +153,12 @@ function project3d(ΦΦ, Π, i, ẑero, d, dx, dy, nx, ny, f̂ocusϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
-    # Base.invokelatest() do
-        Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
-            out,
-            ΦΦ, i̇, ẑero, d, dx, dy, f̂ocusϕ,
-            nx, ny, GL_N - 1, GL_NODES, GL_WEIGHTS,
-            ndrange=(nx, ny)
-        )
-    # end
+    Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
+        out,
+        ΦΦ, i̇, ẑero, d, dx, dy, f̂ocusϕ,
+        nx, ny, GL_N - 1, GL_NODES, GL_WEIGHTS,
+        ndrange=(nx, ny)
+    )
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
@@ -190,63 +198,6 @@ end
     out[ix, iy] = one(T) - exp(-ϕ)
 end
 
-# function step(g::god, dt̂=one(T))
-#     if g.∂t₀
-#         ṫ = t()
-#         g.ẑero.μ[1] == ṫ && return g, false
-#         μ = SVector(ntuple(i -> i == 1 ? ṫ : g.ẑero.μ[i], length(g.ẑero.μ)))
-#     else
-#         δμ = g.f̂ocus.μ .- g.ẑero.μ
-#         all(d -> iszero(d), δμ) && return g, false
-#         α = clamp(g.v * dt̂, zero(T), one(T))
-#         μ = g.ẑero.μ .+ α .* δμ
-#     end
-#     g = move(g, μ)
-#     # g.ẑero.Φ !== ○̂ && ∃!(g.ẑero)
-#     g, true
-# end
-# jerk(g::god, δ) = accelerate(g, g.v * exp(δ))
-# accelerate(g::god, δ) = speed(g, iszero(g.v) ? δ : g.v * exp(δ))
-# speed(g::god, v) = god(g.ẑero, g.f̂ocus, g.∂t₀, clamp(T(v), zero(T), one(T)), g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm)
-# # stop(g::god) = speed(g, zero(T))
-# # stoptime(g::god) = god(g.ẑero, g.f̂ocus, g.∂t₀, SA[zero(T), g.v[2:end]...], g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm)
-# scale(g::god, i, δ) = begin
-#     ρ = SVector(ntuple(ĩ -> begin
-#         ĩ == i && return g.ρ[ĩ] + δ
-#         g.ρ[ĩ]
-#     end, length(g.ρ)))
-#     god(g.ẑero, g.f̂ocus, g.∂t₀, g.v, ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm)
-# end
-# move(g::god, ẑeroμ) =
-#     god(
-#         ∃(g.ẑero.ϵ̂, g.ẑero.d, ẑeroμ, g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ),
-#         ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, SA[ẑeroμ[1], g.f̂ocus.μ[2:end]...], g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ),
-#         g.∂t₀, g.v, g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm
-#     )
-# focus(g::god, ôneμ) =
-#     god(
-#         ∃(g.ẑero.ϵ̂, g.ẑero.d, SA[ôneμ[1], g.ẑero.μ[2:end]...], g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ),
-#         ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, ôneμ, g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ),
-#         g.∂t₀, g.v, g.ρ, g.Ω, g.⚷, g.♯, g.∇̄, g.norm
-#     )
-# move(g::god, i, δ) =
-#     move(g, SVector(ntuple(ĩ -> begin
-#             ĩ == i && return g.ẑero.μ[ĩ] + δ
-#             g.ẑero.μ[ĩ]
-#         end, length(g.ẑero.μ))))
-# focus(g::god, i, δ) = focus(g, SVector(ntuple(ĩ -> begin
-#         ĩ == i && return g.f̂ocus.μ[ĩ] + δ
-#         g.f̂ocus.μ[ĩ]
-#     end, length(g.f̂ocus.μ))))
-# focusup(g, i) = focus(g, i, T(0.01))
-# focusdown(g, i) = focus(g, i, -T(0.01))
-# moveup(g, i) = move(g, i, T(0.01))
-# movedown(g, i) = move(g, i, -T(0.01))
-# jerkup(g) = jerk(g, T(0.01))
-# jerkdown(g) = jerk(g, T(-0.01))
-# scaleup(g, i) = scale(g, i, -T(0.01))
-# scaledown(g, i) = scale(g, i, T(0.01))
-
 function step!(g::god, dt̂=one(T))
     if g.∂t₀
         ṫ = t()
@@ -264,19 +215,25 @@ function step!(g::god, dt̂=one(T))
 end
 jerk!(g::god, δ) = accelerate!(g, g.v * exp(δ))
 accelerate!(g::god, δ) = speed!(g, iszero(g.v) ? δ : g.v * exp(δ))
-speed!(g::god, v) = g.v =  clamp(T(v), zero(T), one(T))
+speed!(g::god, v) = g.v = clamp(T(v), zero(T), one(T))
 scale!(g::god, ρ) = g.ρ = ρ
 scale!(g::god, i, δ) = scale!(g, ntuple(ĩ -> begin
         ĩ == i && return g.ρ[ĩ] + δ
         g.ρ[ĩ]
     end, length(g.ρ)))
 move!(g::god, ẑeroμ) = begin
-    g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, ẑeroμ, g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
-    g.f̂ocus = ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, SA[ẑeroμ[1], g.f̂ocus.μ[2:end]...], g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ)
+    try
+        g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, ẑeroμ, g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
+        g.f̂ocus = ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, SA[ẑeroμ[1], g.f̂ocus.μ[2:end]...], g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ)
+    catch
+    end
 end
 focus!(g::god, ôneμ) = begin
-    g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, SA[ôneμ[1], g.ẑero.μ[2:end]...], g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
-    g.f̂ocus = ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, ôneμ, g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ)
+    try
+        g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, SA[ôneμ[1], g.ẑero.μ[2:end]...], g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
+        g.f̂ocus = ∃(g.f̂ocus.ϵ̂, g.f̂ocus.d, ôneμ, g.f̂ocus.ρ, g.f̂ocus.∂, g.f̂ocus.Φ)
+    catch
+    end
 end
 move!(g::god, i, δ) =
     move!(g, SVector(ntuple(ĩ -> begin
@@ -296,8 +253,7 @@ jerkdown!(g) = jerk!(g, T(-0.01))
 scaleup!(g, i) = scale!(g, i, T(0.01))
 scaledown!(g, i) = scale!(g, i, -T(0.01))
 
-const GL_N = 8
-const GL_NODES_RAW = SVector{GL_N,T}(
+const GL_NODES_RAW_8 = SVector{8,T}(
     -0.9602898564975363,
     -0.7966664774136267,
     -0.5255324099163290,
@@ -307,8 +263,7 @@ const GL_NODES_RAW = SVector{GL_N,T}(
     0.7966664774136267,
     0.9602898564975363
 )
-const GL_NODES = ○ .+ GL_NODES_RAW ./ (GL_NODES_RAW[end] - GL_NODES_RAW[1]) # [0,1]
-const GL_WEIGHTS = SVector{GL_N,T}(
+const GL_WEIGHTS_8 = SVector{8,T}(
     0.1012285362903763,
     0.2223810344533745,
     0.3137066458778873,
@@ -318,7 +273,45 @@ const GL_WEIGHTS = SVector{GL_N,T}(
     0.2223810344533745,
     0.1012285362903763,
 )
-
+const GL_NODES_RAW_16 = SVector{16,T}(
+    -0.9894009349916499,
+    -0.9445750230732326,
+    -0.8656312023878318,
+    -0.7554044083550030,
+    -0.6178762444026438,
+    -0.4580167776572274,
+    -0.2816035507792589,
+    -0.0950125098376374,
+    0.0950125098376374,
+    0.2816035507792589,
+    0.4580167776572274,
+    0.6178762444026438,
+    0.7554044083550030,
+    0.8656312023878318,
+    0.9445750230732326,
+    0.9894009349916499
+)
+const GL_WEIGHTS_16 = SVector{16,T}(
+    0.0271524594117541,
+    0.0622535239386479,
+    0.0951585116824928,
+    0.1246289712555339,
+    0.1495959888165767,
+    0.1691565193950025,
+    0.1826034150449236,
+    0.1894506104550685,
+    0.1894506104550685,
+    0.1826034150449236,
+    0.1691565193950025,
+    0.1495959888165767,
+    0.1246289712555339,
+    0.0951585116824928,
+    0.0622535239386479,
+    0.0271524594117541
+)
+const GL_N = 8
+const GL_NODES_RAW = GL_NODES_RAW_8
+const GL_NODES = ○ .+ GL_NODES_RAW ./ (GL_NODES_RAW[end] - GL_NODES_RAW[1]) # [0,1]
 
 # using GLMakie
 # fig = Figure()

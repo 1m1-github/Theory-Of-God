@@ -24,7 +24,7 @@ god observes or creates, God iterates.
 
 const T = Float32
 
-using KernelAbstractions, StaticArrays, LinearAlgebra
+using KernelAbstractions, StaticArrays, LinearAlgebra, Adapt
 using HTTP, URIs, Sockets
 using PNGFiles
 using MiniFB
@@ -44,17 +44,20 @@ include("browser.jl")
 include("godBrowser.jl")
 const BROWSER_TASK = Threads.@spawn start(godbrowserstart, godbrowserkeypress)
 
+g = godBROWSER[].g
+
 # dx, dy, d, μ, ρ, N=dxdy(g)
-∃!(g, x -> T(0.1), Ω[])
+# ∃!(g, x -> T(0.1), Ω[])
+# ∃!(g, x -> begin
+#         abs(x[2] - x[3]) < T(0.01) && return one(T)
+#         # abs([2] - x[3]) < min(g.ρ[1],g.ρ[2])*T(0.01) && return one(T)
+#         return ○
+#     end, Ω[])
 
 # @time Base.invokelatest() do
 #                         ∃̇(g, Ω[]);
 #                     end;
 
-gb=collect(values(godBROWSER[]))[1]
-gb.browser.width, gb.browser.height
-g=gb.g
-# gb.loop
 # # ∃!(g, (x...) -> prod(x), Ω[])
 # ∃!(g, x -> prod(x), Ω[])
 # step!(g)
@@ -68,17 +71,17 @@ g=gb.g
 # moveup!(g, 1)
 # movedown!(g, 2)
 # movedown!(g, 1)
-scaleup!(g, 2)
+# scaleup!(g, 2)
 # scaledown!(g, 1)
 # scaleup!(g, 2)
 # scaleup!(g, 3)
 # g.ρ=(g.ρ[1],g.ρ[2],zero(T))
 # scaledown!(g, 2)
-g.ẑero.μ
-g.ẑero.ρ
-g.f̂ocus.μ
-g.f̂ocus.ρ
-g.ρ
+# g.ẑero.μ
+# g.ẑero.ρ
+# g.f̂ocus.μ
+# g.f̂ocus.ρ
+# g.ρ
 # norm(g.f̂ocus.μ .- g.ẑero.μ)
 # move!(g, SA[t(), ○, ○, ○])
 # focus!(g, SA[t(), ○*exp(T(0.1)), ○*exp(T(0.1)), ○*exp(T(0.1))])
@@ -87,11 +90,12 @@ g.ρ
 # speed!(g, T(0.001))
 # Ω[].ϵ̃[Ω[]][1].Φ(SA[0.0,0.0,0.0,0.0])
 # Ω[].Ο[Ω[]]
-t()
+# t()
 
 include("Typst.jl")
 # ∃!(g, typst("o"), Ω[])
-∃!(g, typst("i"), Ω[])
+∃!(g, typst("abcd"), Ω[])
+
 # ∃!(g, typst("ii"), Ω[])
 
 # g[], δ = step(g[], zero(T))

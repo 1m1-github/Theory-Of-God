@@ -31,9 +31,9 @@ struct BroadcastBrowser
     processor::BatchProcessor{String}
     BroadcastBrowser(stream, width, height) = new(stream, width, height, BatchProcessor{String}())
 end
-const CLIENTS = Ref(Set{BroadcastBrowser}())
+BROADCASTBROWSER = nothing
 "`put!(BroadcastBrowser, js)` runs the js on all connected browsers"
-put!(::Type{BroadcastBrowser}, js) = [put!(client.processor, js) for client = CLIENTS[]]
+put!(::Type{BroadcastBrowser}, js) = put!(BROADCASTBROWSER.processor, js)
 
 const HTML = raw"""
 <!DOCTYPE html>
@@ -96,11 +96,9 @@ function start(root::Function, keypress::Function, port=freeport(8888))
             width = parse(Int, params["width"])
             height = parse(Int, params["height"])
             @show width, height
-            bb = BroadcastBrowser(stream, width, height)
-            push!(CLIENTS[], bb)
-            root(bb)
-            handle_sse(bb)
-            delete!(CLIENTS[], bb)
+            global BROADCASTBROWSER = BroadcastBrowser(stream, width, height)
+            root(BROADCASTBROWSER)
+            handle_sse(BROADCASTBROWSER)
         elseif uri.path == "/keypress"
             keypress(String(read(stream)))
             HTTP.setstatus(stream, 204)
