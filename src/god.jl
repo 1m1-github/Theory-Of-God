@@ -14,13 +14,10 @@ mutable struct god
 end
 function god(; d, ẑeroμ, ôneμ, ρ, θ=zero(T), ⚷=zero(UInt), ♯=(2, 2), ∇̄=typemax(UInt), n̂orm=x -> sqrt(sum(x̃ -> x̃^2, x)))
     N = length(d)
-    ∂ = SVector(ntuple(i -> begin
-        i == 1 && return (false, true)
-        (true, true)
-    end, N))
+    ∂ = SVector(ntuple(_ -> (true, true), N))
     z = @SVector zeros(T, N)
     ẑero = ∃(Ω[], d, ẑeroμ, z, ∂, ○̂)
-    ône = ∃(Ω[], d, ôneμ, z, ∂, ○̂)
+    ône = ∃(Ω[], d, SA[ẑeroμ[1], ôneμ[2:end]...], z, ∂, ○̂)
     god(ẑero, ône, true, zero(T), ρ, θ, 𝕋(), ⚷, ♯, ∇̄, n̂orm)
 end
 
@@ -64,8 +61,7 @@ function ∃!(g::god, Φ, ω=g.Ω)
     g.ẑero.μ[1] < t(ω) && return
     _, _, _, μ, ρ, _ = octahedron(g)
     try
-        ∂ = SVector(ntuple(i -> (g.ẑero.∂[i][1], g.ône.∂[i][2]), length(μ)))
-        ϵ = ∃(ω, g.ẑero.d, μ, ρ, ∂, Φ)
+        ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, Φ)
         ∃!(ϵ, ω)
     catch e
         bt = catch_backtrace()
@@ -88,13 +84,13 @@ function ∃̇(g::god, ω=g.Ω)
         hasdepth = !iszero(g.ρ[end])
         nz = hasdepth ? GL_N - 1 : 1
         i = fill(istrivial ? 0 : 1, g.♯..., nz)
-        owners!(g, ône, ϵ, i, ϵϵ, 0, dx, dy, nz, ω, istrivial)
+        !owners!(g, ône, ϵ, i, ϵϵ, 0, dx, dy, nz, ω, istrivial)
         ΦΦ = ΦTuple(ntuple(i -> ϵϵ[i].Φ, length(ϵϵ)))
         μρϵϵ = map(ϵ -> μρΩ(ϵ), ϵϵ)
-        ẑeros = ntuple(i -> μρϵϵ[i][1] .- μρϵϵ[i][2], length(μρϵϵ))
-        ônes = ntuple(i -> μρϵϵ[i][1] .+ μρϵϵ[i][2], length(μρϵϵ))
-        ∂z = ntuple(i -> ntuple(j -> ϵϵ[i].∂[j][1], N), length(ϵϵ))
-        ∂o = ntuple(i -> ntuple(j -> ϵϵ[i].∂[j][2], N), length(ϵϵ))
+        ẑeros = SVector(ntuple(i -> μρϵϵ[i][1] .- μρϵϵ[i][2], length(μρϵϵ)))
+        ônes = SVector(ntuple(i -> μρϵϵ[i][1] .+ μρϵϵ[i][2], length(μρϵϵ)))
+        # ∂z = SVector(ntuple(i -> SVector(ntuple(j -> ϵϵ[i].∂[j][1], N)), length(ϵϵ)))
+        # ∂o = SVector(ntuple(i -> SVector(ntuple(j -> ϵϵ[i].∂[j][2], N)), length(ϵϵ)))
         Π̂, Π, ôneϕ = if hasdepth
             z = @SVector zeros(T, N)
             ϵ = ∃(ω, g.ẑero.d, ône, z, g.ẑero.∂, ○̂)
@@ -106,7 +102,8 @@ function ∃̇(g::god, ω=g.Ω)
         end
         godẑero = μ .- (dx .+ dy) * ○
         godẑeroône = ône .- godẑero
-        Π̂(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
+        # Π̂(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
+        Π̂(ΦΦ, Π, i, ẑeros, ônes, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
     catch e
         bt = catch_backtrace()
         showerror(stderr, e, bt)
@@ -114,6 +111,7 @@ function ∃̇(g::god, ω=g.Ω)
     end
 end
 function owners!(g, ône, ϵ, i, ϵϵ, ∇, dx, dy, nz, ω, istrivial)
+    found = false
     if 0 < ∇ && ϵ isa ∃ && !istrivial
         intersects = pyramid_box_intersection!(
             i, length(ϵϵ) + 1,
@@ -121,13 +119,15 @@ function owners!(g, ône, ϵ, i, ϵϵ, ∇, dx, dy, nz, ω, istrivial)
             dx, dy,
             ϵ.μ .- ϵ.ρ, ϵ.μ .+ ϵ.ρ,
             g.♯..., nz)
-        intersects || return
+        intersects || return found
         push!(ϵϵ, ϵ)
+        found = true
     end
-    ∇ == g.∇̄ && return
+    ∇ == g.∇̄ && return found
     for ϵ̃ = ω.ϵ̃[ϵ]
-        owners!(g, ône, ϵ̃, i, ϵϵ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
+        found &= owners!(g, ône, ϵ̃, i, ϵϵ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
     end
+    found
 end
 
 struct ΦTuple{ΦT}
@@ -150,13 +150,15 @@ end
 end
 # Π̂(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑeroône, dx, dy, g.♯..., ôneϕ)
 # nx, ny = g.♯[1], g.♯[2]
-function project2d(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
+# function project2d(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
+function project2d(ΦΦ, Π, i, ẑeros, ônes, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
     Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
         out,
-        ΦΦ, i̇, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy,
+        # ΦΦ, i̇, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy,
+        ΦΦ, i̇, ẑeros, ônes, godẑero, dx, dy,
         nx, ny,
         ndrange=(nx, ny)
     )
@@ -176,7 +178,8 @@ function project3d(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑeroône, dx, 
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
-@kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
+# @kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
+@kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, godẑero, dx, dy, nx, ny)
     (ix, iy) = @index(Global, NTuple)
     # ix, iy = 2,2
     iϕ = i[ix, iy]
@@ -186,17 +189,29 @@ end
         ĩx = T(ix - 1) / T(nx - 1)
         ĩy = T(iy - 1) / T(ny - 1)
         x = godẑero .+ ĩx * dx .+ ĩy * dy
+        ẋ = Base.setindex(x, godẑero[1], 1)
         zlocal = ẑeros[iϕ]
         olocal = ônes[iϕ]
-        ∂zϵ = ∂z[iϕ]
-        ∂oϵ = ∂o[iϕ]
-        if any(x .< zlocal .|| (x .== zlocal .&& ∂zϵ) .||
-               olocal .< x .|| (x .== olocal .&& ∂oϵ) .||
-               olocal .== zlocal)
-            out[ix, iy] = ○
-        else
-            xlocal = (x .- zlocal) ./ (olocal .- zlocal) # todo case olocal < zlocal
-            out[ix, iy] = Φ̇(ΦΦ, iϕ, xlocal) # todo clamp to [0,1]
+        good = true
+        for k = 2:4
+            # ∂zϵ = ∂z[iϕ][k]
+            # ∂oϵ = ∂o[iϕ][k]
+            if x[k] < zlocal[k] ||
+               olocal[k] < x[k] ||
+               olocal[k] == zlocal[k]
+            # if x[k] < zlocal[k] || (x[k] == zlocal[k] && ∂zϵ[k]) ||
+            #    olocal[k] < x[k] || (x[k] == olocal[k] && ∂oϵ[k]) ||
+            #    olocal[k] == zlocal[k]
+                out[ix, iy] = ○
+                good = false
+                break
+            end
+            ẋ = Base.setindex(ẋ, (x[k] - zlocal[k]) / (olocal[k] - zlocal[k]), k)
+            # ẋ[k] = (x[k] .- zlocal[k]) ./ (olocal[k] .- zlocal[k]) # todo case olocal < zlocal
+        end
+        if good
+            # ẋ = Base.setindex(, (x .- zlocal) ./ (olocal .- zlocal), 1)
+            out[ix, iy] = Φ̇(ΦΦ, iϕ, ẋ) # todo clamp to [0,1]
         end
     end
 end
@@ -249,14 +264,16 @@ scale!(g::god, i, δ) = scale!(g, ntuple(ĩ -> begin
     end, length(g.ρ)))
 move!(g::god, ẑeroμ) = begin
     try
-        any(g.ône.μ .< ẑeroμ) && return # todo handle ône<ẑero
+        any(g.ône.μ[2:end] .< ẑeroμ[2:end]) && return # todo handle ône<ẑero
         g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, ẑeroμ, g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
+        g.ône = ∃(g.ône.ϵ̂, g.ône.d, SA[ẑeroμ[1], g.ône.μ[2:end]...], g.ône.ρ, g.ône.∂, g.ône.Φ)
     catch
     end
 end
 focus!(g::god, ôneμ) = begin
     try
-        any(ôneμ .< g.ẑero.μ) && return # todo handle ône<ẑero
+        any(ôneμ[2:end] .< g.ẑero.μ[2:end]) && return # todo handle ône<ẑero
+        g.ẑero = ∃(g.ẑero.ϵ̂, g.ẑero.d, SA[ôneμ[1], g.ône.μ[2:end]...], g.ẑero.ρ, g.ẑero.∂, g.ẑero.Φ)
         g.ône = ∃(g.ône.ϵ̂, g.ône.d, ôneμ, g.ône.ρ, g.ône.∂, g.ône.Φ)
     catch
     end
