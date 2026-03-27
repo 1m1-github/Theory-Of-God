@@ -40,11 +40,12 @@ const invϕ = one(T) / MathConstants.golden
 include("god.jl")
 include("Octahedron.jl")
 include("MiniFB.jl")
-# include("browser.jl")
-# include("godBrowser.jl")
-# const BROWSER_TASK = Threads.@spawn start(godbrowserstart, godbrowserkeypress)
+include("browser.jl")
+include("godBrowser.jl")
+const BROWSER_TASK = Threads.@spawn start(godbrowserstart, godbrowserkeypress)
 
-# g = godBROWSER[].g
+g = godBROWSER[].g
+browser=godBROWSER[].browser
 g = god(
         t=zero(T),
         d=sort(SA[invϕ, invϕ^2, one(T)]), # t, x, y, z
@@ -88,20 +89,13 @@ scale!(g, (T(0.05),T(0.05),zero(T)))
 #                         ∃̇(g, Ω[]);
 #                     end;
 
-Ω[] === ω
-ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, g.ẑero.Φ)
-ϵ = β(ϵ, ω, ω)
-Ω[].ϵ̃[Ω[]]
-Ω[].ϵ̃[Ω[]][1]
-Ω[].ϵ̃[Ω[].ϵ̃[Ω[]][1]][1]
-
 # # ∃!(g, (x...) -> prod(x), Ω[])
 # ∃!(g, x -> prod(x), Ω[])
 step!(g)
 unique(ϕ̇)
 # g.∂t₀=false
 # focusup!(g, 2)
-# focus!(g, SA[g.f̂ocus.μ[1],T(0.3),T(0.3),g.f̂ocus.μ[3]])
+# focus!(g, SA[g.ône.μ[1],T(0.3),T(0.3),g.ône.μ[3]])
 # focusup!(g, 3)
 # focusdown!(g, 2)
 # focusdown!(g, 3)
@@ -115,20 +109,13 @@ unique(ϕ̇)
 # scaleup!(g, 3)
 # g.ρ=(g.ρ[1],g.ρ[2],zero(T))
 # scaledown!(g, 2)
-g.ẑero.μ
-g.ẑero.ρ
-g.f̂ocus.μ
-g.f̂ocus.ρ
-g.ρ
-# norm(g.f̂ocus.μ .- g.ẑero.μ)
+# norm(g.ône.μ .- g.ẑero.μ)
 # move!(g, SA[t(), ○, ○, ○])
 # focus!(g, SA[t(), ○*exp(T(0.1)), ○*exp(T(0.1)), ○*exp(T(0.1))])
 # scale!(g, (T(0.1), T(0.1), one(T)))
 # jerkup!(g)
 # speed!(g, T(0.001))
 # Ω[].ϵ̃[Ω[]][1].Φ(SA[0.0,0.0,0.0,0.0])
-Ω[].Ο[Ω[]]
-t()
 
 include("Typst.jl")
 # ∃!(g, typst("o"), Ω[])
@@ -150,8 +137,8 @@ include("Typst.jl")
 
 # G[].ẑero.μ
 # G[].ẑero.ρ
-# G[].f̂ocus.μ
-# G[].f̂ocus.ρ
+# G[].ône.μ
+# G[].ône.ρ
 # G[].ρ
 # G[], δ = step(G[])
 # g = G[]

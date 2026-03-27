@@ -22,8 +22,8 @@ end
 #         println("CHANGE_MODE=$CHANGE_MODE[]")
 #         println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
 #         println("ẑero.μ=$(G[].ẑero.μ)")
-#         println("f̂ocus.μ=$(G[].f̂ocus.μ)")
-#         println("f̂ocus.μ=$(G[].ρ)")
+#         println("ône.μ=$(G[].ône.μ)")
+#         println("ône.μ=$(G[].ρ)")
 #         if key == 48
 #             global CHANGE_MODE[] = (CHANGE_MODE[] + 1) % 3
 #         elseif 49 ≤ key ≤ 49 + 8
@@ -56,8 +56,8 @@ end
 #     println("CHANGE_MODE=$CHANGE_MODE[]")
 #     println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
 #     println("ẑero.μ=$(G[].ẑero.μ)")
-#     println("f̂ocus.μ=$(G[].f̂ocus.μ)")
-#     println("f̂ocus.μ=$(G[].ρ)")
+#     println("ône.μ=$(G[].ône.μ)")
+#     println("ône.μ=$(G[].ρ)")
 # end
 # kb_cfunc = @cfunction(keyboard_cb, Cvoid, (Ptr{Cvoid}, Int32, Int32, Bool))
 # ccall((:mfb_set_keyboard_callback, MiniFB.libminifb), Cvoid,

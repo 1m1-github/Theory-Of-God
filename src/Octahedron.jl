@@ -38,7 +38,7 @@ points inside axis-aligned box [a,b]. Empty slices → (0,0,0,0). Cost: O(nz·n)
 # i=i
 # ĩ=length(ΦΦ)
 # z=g.ẑero.μ
-# o=g.f̂ocus.μ
+# o=g.ône.μ
 # ex=
 # ey=
 # rx=

@@ -14,7 +14,7 @@ mutable struct god
 end
 function god(; d, t, ẑeroμ, ôneμ, ρ, θ=zero(T), ⚷=zero(UInt), ♯=(2, 2), ∇̄=typemax(UInt), n̂orm=x -> sqrt(sum(x̃ -> x̃^2, x)))
     @assert all(zero(T) .< d)
-    N = length(d)+1
+    N = length(d) + 1
     ∂ = SVector(ntuple(_ -> (true, true), N))
     z = @SVector zeros(T, N)
     ẑero = ∃(Ω[], SA[zero(T), d...], SA[t, ẑeroμ...], z, ∂, ○̂)
@@ -58,10 +58,13 @@ function octahedron(g::god)
     dx, dy, d, μ, ρ, N
 end
 
-function ∃!(g::god, Φ, ω=g.Ω)
-    g.ẑero.μ[1] < t(ω) && return
-    _, _, _, μ, ρ, _ = octahedron(g)
+function ∃!(g::god, Φ, ω=g.Ω, t0=t(ω), t1=one(T))
+    (t0 < zero(T) || t0 < t(ω) || t1 < t0 || one(T) < t1) && return
+    _, _, _, μ̃, ρ̃, _ = octahedron(g)
     try
+        ρ̂ = (t1 - t0) * ○
+        μ = SA[t0+ρ̂, μ̃[2:end]...]
+        ρ = SA[ρ̂, ρ̃[2:end]...]
         ϵ = ∃(ω, g.ẑero.d, μ, ρ, g.ẑero.∂, Φ)
         ∃!(ϵ, ω)
     catch e
@@ -90,8 +93,8 @@ function ∃̇(g::god, ω=g.Ω)
         μρϵϵ = map(ϵ -> μρΩ(ϵ), ϵϵ)
         ẑeros = SVector(ntuple(i -> μρϵϵ[i][1] .- μρϵϵ[i][2], length(μρϵϵ)))
         ônes = SVector(ntuple(i -> μρϵϵ[i][1] .+ μρϵϵ[i][2], length(μρϵϵ)))
-        # ∂z = SVector(ntuple(i -> SVector(ntuple(j -> ϵϵ[i].∂[j][1], N)), length(ϵϵ)))
-        # ∂o = SVector(ntuple(i -> SVector(ntuple(j -> ϵϵ[i].∂[j][2], N)), length(ϵϵ)))
+        ∂z = SVector(ntuple(i -> ϵϵ[div(i, N+1)+1].∂[i%(N+1)][1], N * length(ϵϵ)))
+        ∂o = SVector(ntuple(i -> ϵϵ[div(i, N+1)+1].∂[i%(N+1)][2], N * length(ϵϵ)))
         Π̂, Π, ôneϕ = if hasdepth
             z = @SVector zeros(T, N)
             ϵ = ∃(ω, g.ẑero.d, ône, z, g.ẑero.∂, ○̂)
@@ -103,8 +106,7 @@ function ∃̇(g::god, ω=g.Ω)
         end
         godẑero = μ .- (dx .+ dy) * ○
         godẑeroône = ône .- godẑero
-        # Π̂(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
-        Π̂(ΦΦ, Π, i, ẑeros, ônes, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
+        Π̂(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, g.♯..., ôneϕ)
     catch e
         bt = catch_backtrace()
         showerror(stderr, e, bt)
@@ -151,15 +153,13 @@ end
 end
 # Π̂(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑeroône, dx, dy, g.♯..., ôneϕ)
 # nx, ny = g.♯[1], g.♯[2]
-# function project2d(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
-function project2d(ΦΦ, Π, i, ẑeros, ônes, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
+function project2d(ΦΦ, Π, i, ẑeros, ônes, ∂z, ∂o, godẑero, godẑeroône, dx, dy, nx, ny, ôneϕ)
     out = KernelAbstractions.zeros(GPU_BACKEND, T, nx, ny)
     i̇ = KernelAbstractions.allocate(GPU_BACKEND, UInt16, size(i))
     copyto!(i̇, i)
     Π(GPU_BACKEND, GPU_BACKEND_WORKGROUPSIZE)(
         out,
-        # ΦΦ, i̇, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy,
-        ΦΦ, i̇, ẑeros, ônes, godẑero, dx, dy,
+        ΦΦ, i̇, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy,
         nx, ny,
         ndrange=(nx, ny)
     )
@@ -179,10 +179,9 @@ function project3d(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑeroône, dx, 
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
-# @kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
-@kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, godẑero, dx, dy, nx, ny)
+@kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
     (ix, iy) = @index(Global, NTuple)
-    # ix, iy = 2,2
+    # ix, iy = 2,2 # DEBUG
     iϕ = i[ix, iy]
     if iszero(iϕ)
         out[ix, iy] = ○
@@ -194,24 +193,20 @@ end
         zlocal = ẑeros[iϕ]
         olocal = ônes[iϕ]
         good = true
-        for k = 2:4
-            # ∂zϵ = ∂z[iϕ][k]
-            # ∂oϵ = ∂o[iϕ][k]
+        n = length(godẑero)
+        for k = 2:n
+            ∂i = (iϕ-1)*n+k
             if x[k] < zlocal[k] ||
                olocal[k] < x[k] ||
-               olocal[k] == zlocal[k]
-            # if x[k] < zlocal[k] || (x[k] == zlocal[k] && ∂zϵ[k]) ||
-            #    olocal[k] < x[k] || (x[k] == olocal[k] && ∂oϵ[k]) ||
-            #    olocal[k] == zlocal[k]
+               olocal[k] == zlocal[k] ||
+               (∂z[∂i] && x[k] == zlocal[k]) || (∂o[∂i] && x[k] == olocal[k])
                 out[ix, iy] = ○
                 good = false
                 break
             end
-            ẋ = Base.setindex(ẋ, (x[k] - zlocal[k]) / (olocal[k] - zlocal[k]), k)
-            # ẋ[k] = (x[k] .- zlocal[k]) ./ (olocal[k] .- zlocal[k]) # todo case olocal < zlocal
+            ẋ = Base.setindex(ẋ, (x[k] - zlocal[k]) / (olocal[k] - zlocal[k]), k) # todo case olocal < zlocal
         end
         if good
-            # ẋ = Base.setindex(, (x .- zlocal) ./ (olocal .- zlocal), 1)
             out[ix, iy] = Φ̇(ΦΦ, iϕ, ẋ) # todo clamp to [0,1]
         end
     end

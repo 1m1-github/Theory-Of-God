@@ -9,7 +9,7 @@ godbrowser(g, browser) =
             t = time()
             put!(browser.processor, JS(g.♯[1], g.♯[2]))
             ϕ = zeros(T, g.♯[1], g.♯[2])
-            while false # DEBUG
+            while true # DEBUG
                 try
                     yield()
                     t̃ = time()
@@ -35,12 +35,13 @@ godbrowser(g, browser) =
     end
 function godbrowserstart(browser)
     g = god(
-        d=sort(SA[zero(T), invϕ, invϕ^2, one(T)]), # t, x, y, z
-        ẑeroμ=SA[t(), ○, ○, ○],
-        f̂ocusμ=SA[t(), ○, ○, ○+T(0.1)],
+        t=zero(T),
+        d=sort(SA[invϕ, invϕ^2, one(T)]), # t, x, y, z
+        ẑeroμ=SA[○-T(0.0), ○-T(0.0), ○],
+        ôneμ=SA[○+T(0.0), ○+T(0.0), ○+T(0.1)],
         ρ=(T(0.1), T(0.1), zero(T)),
-        ♯=(10, 10))
-        # ♯=(Int(browser.width), Int(browser.height)))
+        # ♯=(10, 10))
+        ♯=(Int(browser.width), Int(browser.height)))
     global godBROWSER = Ref(godbrowser(g, browser))
 end
 const CHANGE_MODE = Ref(0) # 0=zero, 1=focus, 2=ρ
@@ -50,8 +51,8 @@ function godbrowserkeypress(key)
     # println("CHANGE_MODE=$CHANGE_MODE[]")
     # println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
     # println("ẑero.μ=$(godBROWSER[].g.ẑero.μ)")
-    # println("f̂ocus.μ=$(godBROWSER[].g.f̂ocus.μ)")
-    # println("f̂ocus.μ=$(godBROWSER[].g.ρ)")
+    # println("ône.μ=$(godBROWSER[].g.ône.μ)")
+    # println("ône.μ=$(godBROWSER[].g.ρ)")
     if key == "ArrowUp"
         if CHANGE_MODE[] == 0
             moveup!(godBROWSER[].g, CHANGE_DIM_INDEX[])
@@ -83,8 +84,8 @@ function godbrowserkeypress(key)
     println("CHANGE_MODE=$CHANGE_MODE[]")
     println("CHANGE_DIM_INDEX=$CHANGE_DIM_INDEX[]")
     println("ẑero.μ=$(godBROWSER[].g.ẑero.μ)")
-    println("f̂ocus.μ=$(godBROWSER[].g.f̂ocus.μ)")
-    println("f̂ocus.μ=$(godBROWSER[].g.ρ)")
+    println("ône.μ=$(godBROWSER[].g.ône.μ)")
+    println("ône.μ=$(godBROWSER[].g.ρ)")
 end
 # put!(::godBrowser) = nothing # todo ?
 godBROWSER = nothing
