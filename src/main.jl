@@ -46,10 +46,10 @@ include("MiniFB.jl")
 
 # g = godBROWSER[].g
 g = god(
-        d=sort(SA[zero(T), invϕ, invϕ^2, one(T)]), # t, x, y, z
-        ẑeroμ=SA[zero(T), ○-T(0.0), ○-T(0.0), ○],
-        # ôneμ=SA[t(Ω[].Ο[Ω[]] + 1), ○+T(0.0), ○+T(0.0), ○+T(0.1)],
-        ôneμ=SA[zero(T), ○+T(0.0), ○+T(0.0), ○+T(0.1)],
+        t=zero(T),
+        d=sort(SA[invϕ, invϕ^2, one(T)]), # t, x, y, z
+        ẑeroμ=SA[○-T(0.0), ○-T(0.0), ○],
+        ôneμ=SA[○+T(0.0), ○+T(0.0), ○+T(0.1)],
         ρ=(T(0.1), T(0.1), zero(T)),
         ♯=(10, 10))
 ω = Ω[]

@@ -12,12 +12,13 @@ mutable struct god
     ∇̄::UInt
     norm::Function
 end
-function god(; d, ẑeroμ, ôneμ, ρ, θ=zero(T), ⚷=zero(UInt), ♯=(2, 2), ∇̄=typemax(UInt), n̂orm=x -> sqrt(sum(x̃ -> x̃^2, x)))
-    N = length(d)
+function god(; d, t, ẑeroμ, ôneμ, ρ, θ=zero(T), ⚷=zero(UInt), ♯=(2, 2), ∇̄=typemax(UInt), n̂orm=x -> sqrt(sum(x̃ -> x̃^2, x)))
+    @assert all(zero(T) .< d)
+    N = length(d)+1
     ∂ = SVector(ntuple(_ -> (true, true), N))
     z = @SVector zeros(T, N)
-    ẑero = ∃(Ω[], d, ẑeroμ, z, ∂, ○̂)
-    ône = ∃(Ω[], d, SA[ẑeroμ[1], ôneμ[2:end]...], z, ∂, ○̂)
+    ẑero = ∃(Ω[], SA[zero(T), d...], SA[t, ẑeroμ...], z, ∂, ○̂)
+    ône = ∃(Ω[], SA[zero(T), d...], SA[t, ôneμ...], z, ∂, ○̂)
     god(ẑero, ône, true, zero(T), ρ, θ, 𝕋(), ⚷, ♯, ∇̄, n̂orm)
 end
 
