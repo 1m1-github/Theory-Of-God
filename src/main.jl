@@ -27,7 +27,7 @@ const T = Float32
 using KernelAbstractions, StaticArrays, LinearAlgebra, Adapt
 using HTTP, URIs, Sockets
 using PNGFiles
-using MiniFB
+# using MiniFB
 using Metal
 const GPU_BACKEND = MetalBackend()
 const GPU_BACKEND_WORKGROUPSIZE = 2^2^3
@@ -39,20 +39,22 @@ const invϕ = one(T) / MathConstants.golden
 # const name = Dict{∃, String}()
 include("god.jl")
 include("Octahedron.jl")
-include("MiniFB.jl")
+# include("MiniFB.jl")
+include("Color.jl")
+include("Typst.jl")
 include("browser.jl")
 include("godBrowser.jl")
 const BROWSER_TASK = Threads.@spawn start(godbrowserstart, godbrowserkeypress)
 
 g = godBROWSER[].g
 browser=godBROWSER[].browser
-g = god(
-        t=zero(T),
-        d=sort(SA[invϕ, invϕ^2, one(T)]), # t, x, y, z
-        ẑeroμ=SA[○-T(0.0), ○-T(0.0), ○],
-        ôneμ=SA[○+T(0.0), ○+T(0.0), ○+T(0.1)],
-        ρ=(T(0.1), T(0.1), zero(T)),
-        ♯=(10, 10))
+# g = god(
+#         t=zero(T),
+#         d=sort(SA[invϕ, invϕ^2, one(T)]), # t, x, y, z
+#         ẑeroμ=SA[○-T(0.0), ○-T(0.0), ○],
+#         ôneμ=SA[○+T(0.0), ○+T(0.0), ○+T(0.1)],
+#         ρ=(T(0.1), T(0.1), zero(T)),
+#         ♯=(10, 10))
 ω = Ω[]
 Ω[].Ο[Ω[]]
 t()
@@ -67,6 +69,7 @@ g.θ
 Ω[].ϵ̃[Ω[].ϵ̃[Ω[]][1]][1]
 
 # dx, dy, d, μ, ρ, N=dxdy(g)
+∃!(g, typst("abcd"), Ω[])
 ∃!(g, x -> T(0.1), Ω[])
 ∃!(g, x -> T(0.2), Ω[])
 ∃!(g, x -> T(0.3), Ω[])
@@ -116,10 +119,6 @@ unique(ϕ̇)
 # jerkup!(g)
 # speed!(g, T(0.001))
 # Ω[].ϵ̃[Ω[]][1].Φ(SA[0.0,0.0,0.0,0.0])
-
-include("Typst.jl")
-# ∃!(g, typst("o"), Ω[])
-∃!(g, typst("abcd"), Ω[])
 
 # ∃!(g, typst("ii"), Ω[])
 

@@ -25,8 +25,8 @@ function Adapt.adapt_structure(to, Φ::ΦTuple)
     ΦTuple(map(ϕ -> Adapt.adapt(to, ϕ), Φ.ϕ))
 end
 
-function typst(code)
-    mat = typst_to_matrix(code)
+function typst(typst_code)
+    mat = typst_to_matrix(typst_code)
     H, W = size(mat)
     ΦTypst(mat, Int32(H), Int32(W))
 end
@@ -37,11 +37,16 @@ function typst_to_matrix(typst_code)
     cmd = `typst compile - --format png --ppi $DPI -`
     rgba = pipeline(IOBuffer(TYPST_TEMPLATE(typst_code)), cmd) |> read |> IOBuffer |> PNGFiles.load
     mat = KernelAbstractions.allocate(GPU_BACKEND, T, size(rgba)...)
-    copyto!(mat, rgb2c.(rgba))
+    # copyto!(mat, rgb2c.(rgba))
+    copyto!(mat, rgba2scalar.(rgba))
     TYPST_CACHE[h] = mat
 end
 
-# typst_code="A"
+typst_code="abcd"
 # mat = typst_to_matrix("A")
 # φ_hi = Φ_typst(mat)
 # gpu_safe(φ_hi, 4)
+# typeof(rgba[1,1])
+Metal.@allowscalar unique(collect(values(TYPST_CACHE))[1])
+unique(rgba)
+unique(rgba2scalar.(rgba))

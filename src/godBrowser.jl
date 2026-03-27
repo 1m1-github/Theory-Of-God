@@ -9,7 +9,7 @@ godbrowser(g, browser) =
             t = time()
             put!(browser.processor, JS(g.♯[1], g.♯[2]))
             ϕ = zeros(T, g.♯[1], g.♯[2])
-            while true # DEBUG
+            while false # DEBUG
                 try
                     yield()
                     t̃ = time()
@@ -101,7 +101,8 @@ function Δ!(ϕ, ϕ̇)
     for i = CartesianIndices(ϕ̇)
         ϕ[i] == ϕ̇[i] && continue
         ϕ[i] = ϕ̇[i]
-        push!(δ, (i, (c2rgb(ϕ̇[i])..., one(T))))
+        # push!(δ, (i, (c2rgb(ϕ̇[i])..., one(T))))
+        push!(δ, (i, scalar2rgba(ϕ̇[i])))
     end
     δ
 end

@@ -88,7 +88,8 @@ function ∃̇(g::god, ω=g.Ω)
         hasdepth = !iszero(g.ρ[end])
         nz = hasdepth ? GL_N - 1 : 1
         i = fill(istrivial ? 0 : 1, g.♯..., nz)
-        !owners!(g, ône, ϵ, i, ϵϵ, 0, dx, dy, nz, ω, istrivial)
+        owners!(g, ône, ϵ, i, ϵϵ, 0, dx, dy, nz, ω, istrivial)
+        isempty(ϵϵ) && return fill(○, g.♯...)
         ΦΦ = ΦTuple(ntuple(i -> ϵϵ[i].Φ, length(ϵϵ)))
         μρϵϵ = map(ϵ -> μρΩ(ϵ), ϵϵ)
         ẑeros = SVector(ntuple(i -> μρϵϵ[i][1] .- μρϵϵ[i][2], length(μρϵϵ)))
@@ -114,7 +115,6 @@ function ∃̇(g::god, ω=g.Ω)
     end
 end
 function owners!(g, ône, ϵ, i, ϵϵ, ∇, dx, dy, nz, ω, istrivial)
-    found = false
     if 0 < ∇ && ϵ isa ∃ && !istrivial
         intersects = pyramid_box_intersection!(
             i, length(ϵϵ) + 1,
@@ -122,15 +122,13 @@ function owners!(g, ône, ϵ, i, ϵϵ, ∇, dx, dy, nz, ω, istrivial)
             dx, dy,
             ϵ.μ .- ϵ.ρ, ϵ.μ .+ ϵ.ρ,
             g.♯..., nz)
-        intersects || return found
+        intersects || return
         push!(ϵϵ, ϵ)
-        found = true
     end
-    ∇ == g.∇̄ && return found
+    ∇ == g.∇̄ && return
     for ϵ̃ = ω.ϵ̃[ϵ]
-        found &= owners!(g, ône, ϵ̃, i, ϵϵ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
+        owners!(g, ône, ϵ̃, i, ϵϵ, ∇ + 1, dx, dy, nz, ω, trivial(ϵ̃))
     end
-    found
 end
 
 struct ΦTuple{ΦT}
@@ -179,6 +177,7 @@ function project3d(ΦΦ, Π, i, godẑero, ẑeros, ônes, godẑeroône, dx, 
     KernelAbstractions.synchronize(GPU_BACKEND)
     Array(out)
 end
+# nx, ny=g.♯[1],g.♯[2]
 @kernel function project2d!(out, ΦΦ, i, ẑeros, ônes, ∂z, ∂o, godẑero, dx, dy, nx, ny)
     (ix, iy) = @index(Global, NTuple)
     # ix, iy = 2,2 # DEBUG
@@ -206,6 +205,7 @@ end
             end
             ẋ = Base.setindex(ẋ, (x[k] - zlocal[k]) / (olocal[k] - zlocal[k]), k) # todo case olocal < zlocal
         end
+        ΦΦ.ϕ[1](ẋ)
         if good
             out[ix, iy] = Φ̇(ΦΦ, iϕ, ẋ) # todo clamp to [0,1]
         end
