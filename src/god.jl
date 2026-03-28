@@ -105,7 +105,7 @@ function ∃̇(g::god, ω=g.Ω)
             z = @SVector zeros(T, N)
             ϵ = ∃(ω, g.ẑero.d, ône, z, g.ẑero.∂, ○̂)
             ϵ, found = X(ϵ, g.∇̄, ω)
-            !found || trivial(ϵ) ? ○ : ϵ.Φ(ône)
+            !found || trivial(ϵ) ? ○ : Metal.@allowscalar ϵ.Φ(ône)
         else
             zero(T)
         end

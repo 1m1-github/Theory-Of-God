@@ -87,7 +87,11 @@ scale!(g, (T(0.025), T(0.025), zero(T)))
 scale!(g, (T(0.05), T(0.05), zero(T)))
 scale!(g, (T(0.1), T(0.1), zero(T)))
 scale!(g, (T(0.2), T(0.2), zero(T)))
+scale!(g, (T(0.2), T(0.2), T(0.01)))
+scale!(g, (T(0.2), T(0.2), one(T)))
 scale!(g, 3, one(T))
+scale!(g, 3, T(0.05))
+scale!(g, 3, zero(T))
 g.∂t₀=false
 ∃!(g, x -> begin
                 # c = (x[1], T(0.5), T(0.5), T(0.6))
